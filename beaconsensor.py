@@ -62,10 +62,13 @@ except:
 blescan.hci_le_set_scan_parameters(sock)
 blescan.hci_enable_le_scan(sock)
 
-# Array elements are 'Pretty Name', 'Beacon MAC or UUID', 'hubitat device ID', and the last 0 is a counter to track departures
-scanningFor = [['Tom','18:04:ed:51:91:5b','41',0],\
-                ['Ben','18:04:ed:51:94:36','42',0],\
-                ['Maggie','b0:91:22:f7:6b:f8','43',0]]
+# Array elements are 'Pretty Name', 'Beacon MAC or UUID (MAC should use lower case letters)', 'hubitat device ID', and the last 0 is a counter to track departures
+scanningFor = [['','','',0],\
+                ['','','',0],\
+                ['','','',0]]
+hubitatIP = "0.0.0.0"
+makerDev = "" # set this to the device number of the Maker API instance in hubitat
+makerToken = "" # Set this to the Maker API Token
 
 while True:
         returnedList = blescan.parse_events(sock, 10)
@@ -74,15 +77,15 @@ while True:
                 value = beacon.find(element[1])
                 if value > -1:
                     try:
-                        requests.get('http://10.10.13.151/apps/api/34/devices/'+element[2]+'/arrived?access_token=2152a7bc-1de0-4e69-a299-605720618ddb')
+                        requests.get('http://'+hubitatIP+'/apps/api/'+makerDev+'/devices/'+element[2]+'/arrived?access_token='+makerToken)
                         element[3] = 0
                     except:
                         print "Something went wrong with the Hubitat Connection, couldn't set "+element[0]+" to arrived. will keep trying..."
                 elif value <= -1:
                     element[3] += 1
-                if  element[3] == 2000:
+                if  element[3] == 2000: #this comes out to about a minute of not seeing the beacon, mark it departed
                     try:
-                        requests.get('http://10.10.13.151/apps/api/34/devices/'+element[2]+'/departed?access_token=2152a7bc-1de0-4e69-a299-605720618ddb')
+                        requests.get('http://'+hubitatIP+'/apps/api/'+makerDev+'/devices/'+element[2]+'/departed?access_token='+makerToken)
                     except:
                         print "Something went wrong with the Hubitat Connection, couldn't set "+element[0]+" to departed. will keep trying..."
                 if element[3] >= 2500:
